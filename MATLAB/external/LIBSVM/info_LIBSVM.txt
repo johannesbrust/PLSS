@@ -1,0 +1,29 @@
+SUSY
+
+    Source: UCI / SUSY
+    Preprocessing: In the original paper, the last 500,000 instances are used for testing, while the remaining are for training. See [PB14a]
+    # of classes: 2
+    # of data: 5,000,000
+    # of features: 18
+
+covtype.binary
+
+    Source: UCI / Covertype
+    Preprocessing: Transform from multiclass into binary class. [RC02a]
+    # of classes: 2
+    # of data: 581,012
+    # of features: 54
+
+protein
+
+    Source: [JYW02a]
+    # of classes: 3
+    # of data: 17,766 / 6,621 (testing) / 14,895 (tr) / 2,871 (val)
+    # of features: 357
+
+aloi
+
+    Source: aloi [AR14a]
+    # of classes: 1,000
+    # of data: 108,000
+    # of features: 128

@@ -1,0 +1,10 @@
+Gower & Richtarik, RandomLinearLab, 	retrieved 03/12/20
+LIBSVM, 				retrieved 03/12/20
+	SUSY
+	covtype.binary
+
+The Matrix Computation Toolbox 		retrieved 04/09/20
+N. J. Higham. The Matrix Computation Toolbox. http://www.ma.man.ac.uk/~higham/mctoolbox
+
+SuiteSparse Matrix Collection 		retrieved 04/09/20
+The University of Florida Sparse Matrix Collection, by T. Davis and Y. Hu, published in the ACM Transactions on Mathematical Software, Vol 38, Issue 1, 2011, pages 1:1-1:25

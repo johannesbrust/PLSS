@@ -1,0 +1,24 @@
+README
+
+The software for craigSOL is provided by SOL, Stanford University
+under the terms of the OSI Common Public License (CPL)
+   http://www.opensource.org/licenses/cpl1.0.php
+or the BSD License
+   http://www.opensource.org/licenses/bsd-license.php
+
+15 Aug 2014: First set of files available for download from SOL,
+             based on those for lsqrSOL.
+             Craig's method solves min ||x|| st Ax = b.
+             It is simpler than LSQR and therefore may run
+             slightly faster (but the number of iterations
+             is likely to be very similar).
+
+Please send comments to
+             Michael Saunders, SOL, Stanford University
+             saunders@stanford.edu  650-723-1875
+-----------------------------------------------------------------------------
+
+craigSOL involves the following files:
+   README
+   craigSOL.m
+   craigSOLtest.m

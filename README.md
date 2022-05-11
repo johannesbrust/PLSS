@@ -59,7 +59,7 @@ Iter 	 norm(Res) 	 norm(pk)
 **************************************************** 
 ```
 
-### Python 3.7
+### Python 3.8
 Likewise, you can run a different example in Python from within PYTHON/
 and at the console
 

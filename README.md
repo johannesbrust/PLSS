@@ -59,7 +59,7 @@ Iter 	 norm(Res) 	 norm(pk)
 **************************************************** 
 ```
 
-### Python 3.8
+### Python 3.9
 Likewise, you can run a different example in Python from within PYTHON/
 and at the console
 
@@ -67,7 +67,7 @@ and at the console
 In[85]: runfile('example_3.py')
 
 ********* Linear Systems Solver ********************  
-*         Alg: PLSS (Python 3.8)                      
+*         Alg: PLSS (Python 3.9)                      
 *         Size: m = 10, n = 10                        
 *         tol = 0.00000100                                 
 *         Maxit = 500                                  

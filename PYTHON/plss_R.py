@@ -35,12 +35,12 @@ def plss_R(x, A, b,
     # x := Initial guess (nx1)
     # A := Linear system (mxn)
     # b := Right hand side (mx1)
-    # opts := Struct with solver options
-    #   opts.tol    := Residual tolerance 
-    #   opts.maxiter  := Maximum iterations
-    #   opts.measure:= Different error measure (for comparisons). 
-    #   opts.printF  := Flag for printing
-    #   opts.store  := Flag for storing information (for comparisons)
+    # tol := Residual tolerance 
+    # maxiter  := Maximum iterations
+    # hasMeasure:= Flag for error measure (for comparisons). 
+    # measure:= Different error measure (for comparisons). 
+    # printF  := Flag for printing
+    # store  := Flag for storing information (for comparisons)
     #
     # OUTPUTS:
     # xk := Iterate at termination
@@ -109,7 +109,7 @@ def plss_R(x, A, b,
         
         print('');
         print('********* Linear Systems Solver ********************  ');
-        print('*         Alg: PLSS (Python 3.8)                      ');
+        print('*         Alg: PLSS (Python 3.9)                      ');
         print('*         Size: m = %i, n = %i                        '% (m,n));
         print('*         tol = %1.8f                                 '% tol);
         print('*         Maxit = %i                                  '% maxiter);        

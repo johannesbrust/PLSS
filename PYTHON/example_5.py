@@ -1,11 +1,11 @@
 """
-Test PLSS
+Test PLSS (Kaczmarz Method)
 
 Projected Linear Systems Solver
 """
-#--------------------------- example_4.py -------------------------------------
+#--------------------------- example_5.py -------------------------------------
 #
-# Test of the Python 3 version of PLSS W
+# Test of the Python 3 version of PLSS KZ
 #
 # This problem is based on transposing the bidiagonal matrix from 
 # experiments using CRAIG's method from Standford SOL
@@ -13,10 +13,11 @@ Projected Linear Systems Solver
 # The solution with n=10 is [n,n-1,...,1]
 #------------------------------------------------------------------------------
 # J.B., 05/10/22, Initial version
+# J.B., 05/22/22, Test of Kaczmarz like iteration
 
 # Import
 import numpy as np
-import plss_RW2 as plw2
+import plss_KZ as plkz
 
 # Test uses a matrix from SOL (Systems Optimization Laboratory)
 # in testing CRAIG's method
@@ -30,10 +31,10 @@ xsol    = np.array(np.arange(n,0,-1.));
 
 b = A.T @ xsol
 
-# Call PLSS
+# Call PLSS KZ
 # All default values are used, except results are printed
 x0 = np.zeros(np.size(xsol))
 
-(xk,rk,outs) = plw2.plss_RW2(x0,A.T,b,printF=1,useW=1)
+(xk,rk,outs) = plkz.plss_KZ(x0,A.T,b,maxiter=n+1,printF=1)
 
-#(xk,rk,outs) = pl.plss_R(x0,A.T,b,printF=1)
+

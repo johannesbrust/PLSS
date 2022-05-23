@@ -7,8 +7,8 @@ function [ xk, nck, outs ] = plss_KZ_EX( x, A, b, opts )
 %
 % where A in (mxn), x in (nx1), b in (mx1).
 %
-% This algorithm computes search directions dk defined by the projections
-% defined by sketches that store previous residuals in -ck = rk = b - A*xk.
+% This algorithm computes search directions pk defined by the projections
+% defined by sketches that store identity columns.
 % 
 % Let Sk = [e1,...,ek1], then the step is
 % 
@@ -58,6 +58,9 @@ function [ xk, nck, outs ] = plss_KZ_EX( x, A, b, opts )
 % 05/03/22, J.B., Preparation to release method, to include
 %                   minimum residual and choice for permutation
 % 05/08/22, J.B., Preparation for release
+% 05/11/22, J.B., Including safeguards for the randomized method
+%                   i.e., ensuring terminating early with "zero" step
+% 05/22/22, J.B., Experiments with "zero" steps
 
 % Initializations
 if isfield(opts,'tol') 
@@ -166,7 +169,22 @@ elseif perm == 4
 end
 
 xk      = x;
-rk      = b(idxs)-A(idxs,:)*xk;
+rk(idxs,1) = b(idxs,1)-A(idxs,:)*xk;
+
+% Make sure the next residual element is nonzero
+if abs(rk(idxs(k+1))) < tol
+    
+    idn = idxs(k+1);
+    
+    % Find the first instance of nonzero residual
+    kn = find(abs(rk(idxs))>=tol,1);
+    
+    % Swap indicies
+    idxs(k+1) = idxs(kn);
+    idxs(kn) = idn;
+    
+end
+
 numA    = numA + 1;
 
 yk      = A(idxs(k+1),:)'; 
@@ -192,10 +210,12 @@ if nck <= tol
 end
 
 deltaki     = 1/(yk'*yk);
-pk          = (deltaki*rk((1:k+1))).*yk;
+pk          = (deltaki*rk(idxs(k+1))).*yk;
 
 P(:,k+1)    = pk;
-PA(:,k+1)   = A(idxs,:)*pk;
+
+PA(idxs,k+1)   = A(idxs,:)*pk;
+
 d(k+1)      = sqrt(pk'*pk);
 numA        = numA + 1;
 
@@ -216,33 +236,56 @@ if print == 1
 end
 
 it  = it + 1;
-k   = k + 1;
-kk  = 1;
+k   = k + 1; 
 xk  = xk + pk;
 
 % Main loop
 while (tol < nck) && (it < maxiter) && (ex == 0)
     
-    rk      = rk - PA(:,k); 
+    rk(idxs) = rk(idxs) - PA(idxs,k); 
         
-    yk = A(idxs(kk+1),:)';
+    % Make sure the next residual element is nonzero
+    if abs(rk(idxs(k+1))) < tol
+        idn = idxs(k+1);
+        % Find the first instance of nonzero residual
+        kn = find(abs(rk(idxs))>=tol,1);
+        if isempty(kn) == 0
+            % Swap indicies
+            idxs(k+1) = idxs(kn);
+            idxs(kn) = idn;
+        else
+            ex = 1;
+            tend = toc(tstart);
+        end
+    end
+        
+    yk = A(idxs(k+1),:)';
     
     nck = norm(rk);
     nyk = norm(yk);
     
-    rhok = rk((kk+1)); 
+    rhok = rk(idxs(k+1)); 
         
-    uk1     = ((PA(kk+1,1:k))')./d(1:k);
+    %Py      = P(:,1:k)'*yk;
+    
+    uk1     = ((PA(idxs(k+1),1:k))')./d(1:k);
+            
     nuk1    = norm(uk1);
     beta    = rhok/((nyk-nuk1)*(nyk+nuk1));
+    
+    if abs(nyk-nuk1) < 5*eps
+        
+        beta = 0;
+        
+    end
     
     % Step computation
     pk = beta.*(yk - P(:,1:k)*(uk1./d(1:k)));
                
    % Iteration information
     if hasMeasure == true; nck = norm(measure*rk); end    % else nck = norm(ck); 
-    if print == 1 && ((k < 11) || mod(k,20)==0)
-        fprintf('%i \t %.4e \t %.4e \n',k,nck,norm(pk)); 
+    if print == 1 && ((it < 11) || mod(it,20)==0)
+        fprintf('%i \t %.4e \t %.4e \n',it,nck,norm(pk)); 
     end
     
     if store == true
@@ -250,10 +293,14 @@ while (tol < nck) && (it < maxiter) && (ex == 0)
         times       = [times;toc(tstart)]; %#ok<AGROW>
     end
     
-    if nck <= tol        
+   
+     if nck <= tol        
         ex          = 1; 
-        tend        = toc(tstart);            
-    end    
+        tend        = toc(tstart);         
+        if print == 1 && 11 < it && mod(it,20)~=0
+            fprintf('%i \t %.4e \t %.4e \n',it,nck,norm(pk));
+        end
+    end   
     
     % Store minimum iterate
     if nckmin >= nck
@@ -265,43 +312,66 @@ while (tol < nck) && (it < maxiter) && (ex == 0)
     
     % Prepare for next iteration
     xk  = xk + pk;
-        
+                  
     % Updates or restart
-    if mod(it,(n-1))~=0
-        npk = norm(pk);
-        if npk > 1e-14
-            P(:,k+1)    = pk; %#ok<SPRIX>
-            PA(:,k+1)   = A(idxs,:)*pk; %#ok<SPRIX>
-            d(k+1)      = npk;%sqrt(pk'*pk);
-            numA        = numA + 1;
-            k           = min(k + 1,n-1);
-        end
+    if k+1==n
+        k = 1;
     else
-        % Restart
-        % Including new sort of residuals
-        k   = 0;
-        kk  = 0;
-        rk  = b(idxs)-A(idxs,:)*xk;
-        
-        [~,idxs]    = sort(abs(rk),'descend');
-        
-        yk          = A(idxs(k+1),:)'; %'*ck;
-        numA        = numA + 1;
-
-        %rhok        = ck'*ck;
-        deltaki     = 1/(yk'*yk);
-        pk          = (deltaki*rk((1:k+1))).*yk;
-
-        P(:,k+1)    = pk; %#ok<SPRIX>
-        PA(:,k+1)   = A(idxs,:)*pk; %#ok<SPRIX>
-        d(k+1)      = sqrt(pk'*pk);
-        numA        = numA + 1;
-        k           = min(k + 1,n-1);
-        
+        k = k + 1;
     end
+    
+    P(:,k)    = pk; %#ok<SPRIX>
+    npk       = norm(pk);
+    
+    if beta == 0
+        npk = 1;
+    end
+    
+    PA(idxs,k)   = A(idxs,:)*pk; %#ok<SPRIX>
+    
+    d(k)      = npk;%sqrt(pk'*pk);
+    numA      = numA + 1;
+    
+%     % Updates or restart
+%     if mod(it,(n-1))~=0
+%         npk = norm(pk);
+%         if npk > 1e-14
+%             P(:,k+1)    = pk; %#ok<SPRIX>
+%             PA(:,k+1)   = A(idxs,:)*pk; %#ok<SPRIX>
+%             d(k+1)      = npk;%sqrt(pk'*pk);
+%             numA        = numA + 1;
+%             k           = min(k + 1,n-1);
+%         end
+%     else
+%         % Restart
+%         % Including new sort of residuals
+%         k   = 0;
+%         kk  = 0;
+%         rk  = b(idxs)-A(idxs,:)*xk;
+%         numA        = numA + 1;
+%         
+%         nck = norm(rk);
+%         
+%         [~,idxs]    = sort(abs(rk),'descend');
+%         
+%         yk          = A(idxs(k+1),:)'; %'*ck;
+%         
+%         rk = rk(idxs);
+%         
+%         %rhok        = ck'*ck;
+%         deltaki     = 1/(yk'*yk);
+%         pk          = (deltaki*rk((1:k+1))).*yk;
+% 
+%         P(:,k+1)    = pk; %#ok<SPRIX>
+%         PA(:,k+1)   = A(idxs,:)*pk; %#ok<SPRIX>
+%         d(k+1)      = sqrt(pk'*pk);
+%         numA        = numA + 1;
+%         k           = min(k + 1,n-1);
+%         
+%     end
         
     it      = it +1;    
-    kk      = min(kk + 1,n-1);
+    %kk      = min(kk + 1,n-1);
     
 end
 
@@ -310,6 +380,8 @@ if ex == 0
 end
 
 nck = norm(A*xk-b);
+
+numA = numA + 1;
 
 if nck < tol
     ex = 1;
@@ -339,7 +411,7 @@ if print == 1
     fprintf('*         Conv: %i                                   \n',ex);
     fprintf('*         Time (s): %1.2f                            \n',tend);    
     fprintf('*         norm(Res) = %1.4f                          \n',nck);
-    fprintf('*         Iter = %i                                  \n',k);
+    fprintf('*         Iter = %i                                  \n',it);
     fprintf('*         Num. mult. = %i                            \n',numA);
     fprintf('**************************************************** \n');
     fprintf('\n');

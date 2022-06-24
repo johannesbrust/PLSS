@@ -24,6 +24,7 @@ function [ outsS ] = runLSolver( A,b,x0,opts,whichSolv )
 % 12/08/21, J.B., Addition of sparse random normal solver
 % 01/11/22, J.B., Addition of randomized solvers
 % 05/07/22, J.B., Preparation of release
+% 06/24/22, J.B., Addition of craig's and Kaczmarz like method
 
 optsP   = opts.optsP;
 M1      = opts.M1;
@@ -44,7 +45,12 @@ switch whichSolv
     case 29 % Keep
         [xk,res,outs] = plss_RW2(x0,A,b,optsP); % implicit ck
     case 30 % Keep
-        [xk,res,outs] = plss_RANDN(x0,A,b,optsP); % random normal     
+        [xk,res,outs] = plss_RANDN(x0,A,b,optsP); % random normal
+    case 34 % Keep
+        [xk,~,flag,its,res,~,~,~] = craigSOL(size(A,1),size(A,2),A,b,opts.atol,...
+            tolR,opts.conlim,maxit,opts.show);
+    case 35 % Keep
+        [xk,res,outs] = plss_KZ_EX(x0,A,b,optsP); % Kaczmarz method
     otherwise
         [xk,res,outs] = plss_RW2(x0,A,b,optsP); % implicit ck
 end
@@ -67,7 +73,8 @@ if isfield(opts,'storeRelRes')
     end
 end
 
-if whichSolv == 18
+if whichSolv == 18 || whichSolv == 34
+    if whichSolv == 34; relres = res/max(norm(b),1); end
     outsS.niter = its;
     outsS.info1 = flag;
     outsS.info2 = relres;

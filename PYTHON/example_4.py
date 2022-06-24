@@ -8,7 +8,7 @@ Projected Linear Systems Solver
 # Test of the Python 3 version of PLSS W
 #
 # This problem is based on transposing the bidiagonal matrix from 
-# experiments using CRAIG's method from Standford SOL
+# experiments using CRAIG's method from Stanford SOL
 # 
 # The solution with n=10 is [n,n-1,...,1]
 #------------------------------------------------------------------------------

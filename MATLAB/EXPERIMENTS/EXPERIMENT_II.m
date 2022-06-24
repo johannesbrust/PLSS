@@ -20,7 +20,7 @@
 %
 % This experiment is Table 2 in the corresponding article
 %
-% Warning: This experiment is relatively
+% Note: This experiment is relatively time consuming
 %
 %-------------------------------------------------------------------------%
 % 05/17/21, J.B., Including weighted modified solver

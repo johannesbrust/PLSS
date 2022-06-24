@@ -26,14 +26,7 @@ def plss_KZ(x, A, b,
     # 
     # where e_k denotes the kth column of the identity matrix. This method
     # stores the updates Pk=[p0,...,pkm1] and the products PkA =
-    # [A*p0,...,A*pkm1]. 
-    # Options for permutation of rows is possible:
-    #       perm =  0 : No reordering
-    #               1 : Increasing row norms
-    #               2 : Decreasing residuals
-    #               3 : dmperm "Dulmage-Mendelsohn permutation"
-    #               4 : randomized (default)
-    # Note, on restart the iteration starts with decreasing residuals
+    # [A*p0,...,A*pkm1].     
     #
     # INPUTS:
     # x := Initial guess (nx1)
@@ -69,6 +62,7 @@ def plss_KZ(x, A, b,
     #                   i.e., ensuring terminating early with "zero" step
     # 05/22/22, J.B., Experiments with "zero" steps,
     #                   Python implementation 
+    # 06/24/22, J.B., Preparation for underdetermined systems
     
     # Initializing storage    
     tstart  = time.time();
@@ -80,9 +74,11 @@ def plss_KZ(x, A, b,
     #idxs    = np.random.permutation(m);
     idxs = np.arange(m);
     
-    P       = np.zeros([m,n]);
-    PA      = np.zeros([m,n]);
-    d       = np.zeros(n);
+    mnmi    = np.min([m,n]);
+    
+    P       = np.zeros([n,mnmi]);
+    PA      = np.zeros([m,mnmi]);
+    d       = np.zeros(mnmi);
                 
     # Row index to select
     k       = 0;
@@ -256,7 +252,7 @@ def plss_KZ(x, A, b,
         numA        = numA + 1;
            
         # Updates or restart        
-        if k == (n-1):
+        if k == (mnmi-1):
             k = 0;
         else:
             k = k + 1;

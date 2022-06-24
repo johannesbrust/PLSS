@@ -61,6 +61,7 @@ function [ xk, nck, outs ] = plss_KZ_EX( x, A, b, opts )
 % 05/11/22, J.B., Including safeguards for the randomized method
 %                   i.e., ensuring terminating early with "zero" step
 % 05/22/22, J.B., Experiments with "zero" steps
+% 06/24/22, J.B., Update for underdetermined systems
 
 % Initializations
 if isfield(opts,'tol') 
@@ -107,9 +108,17 @@ tstart  = tic;
 %mem     = maxiter; % Memory
 
 % Sparse storage
-P       = sparse(m,n);
-PA      = sparse(m,n);
-d       = zeros(n,1);
+%if n <= m; dm1 = m; dm2 = n; else dm1 = n; dm2 = m; end
+
+mimn    = min(m,n);
+
+%P       = sparse(n,mimn);
+%PA      = sparse(m,mimn);
+
+P       = zeros(n,mimn);
+PA      = zeros(m,mimn);
+
+d       = zeros(mimn,1);
 
 numA    = 0;
 ex      = 0;
@@ -314,7 +323,7 @@ while (tol < nck) && (it < maxiter) && (ex == 0)
     xk  = xk + pk;
                   
     % Updates or restart
-    if k+1==n
+    if k+1==mimn
         k = 1;
     else
         k = k + 1;
@@ -396,7 +405,7 @@ end
 
 outs.ex     = ex;
 outs.ctime  = tend;
-outs.niter  = k;
+outs.niter  = it;
 outs.numA   = numA;
     
 if store == true        

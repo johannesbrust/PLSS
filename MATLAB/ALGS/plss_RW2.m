@@ -96,7 +96,7 @@ Wh = ones(n,1);
 Whi = ones(n,1);
 
 if useW == 1
-    if m ==n
+    if m <= n
         Wh(1:n) = sqrt(sum(A.*A)+1); % 0.5
         Wh(1:n) = min(Wh(1:n),1e5);
         Whi(1:n) = 1./Wh(1:n);

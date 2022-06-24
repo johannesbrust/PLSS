@@ -1,240 +1,219 @@
-%----------------------- EXPERIMENT_III ----------------------------------%
+%---------------------------- EXPERIMENT_III -----------------------------%
 %
-% Comparison of PLSS(r) to methods from Gower, Richtarik (GR), (2015)
+% PLSS: (P)rojected (L)inear (S)ystems (S)olver 
 %
-% This test uses LIBSVM problems in order to do "Ridge Regressions"
+% This experiment compares with "external" solver craig, a random normal
+% projection method and two versions of PLSS. 
+% Times are displayed when method converges. Otherwise "inf" is printed.
 %
-% Extended experiment with randomized methods
+% solIdx:
+%   30: Radom normal sketch
+%   24: PLSS    (Algorithm 1, W=I)
+%   28: PLSS W  (Algorithm 1, W=1./sqrt(1+sum(A.*A)))
+%   34: craig
 %
-% Solvers in the comparison are
-%
-%   Gauss pd (GR)
-%   CD pd (GR)
-%   Block CD-pd (GR)
-%   Block Gauss (GR)
-%   PLSS W (Algorithm 1, W=1./sqrt(sum(A.*A)))
-%   PLSS (Algorithm 1, W=I)
-%   PLSS KZ (Kaczmarz like method)
-%
-% Comarison on 8 LIBSVM Problems.
-% The problems and setup in in this experiment are the same from GR.
+% Comarison on 42 'SuiteSparse Matrix Collection' Problems.
+% The problems in this experiment are small/medium overdetermined
+% systems with dimensions of up to 1000 <= n  <= 10 000.
 %
 % Success if || Ax - b ||_2 \leq 10^{-4}
 %
-% This experiment corresponds to Figure 1 in the article of
-% J.J. Brust and M.A Saunders (2022)
+% This experiment is Table 3 in the corresponding article
+%
 %-------------------------------------------------------------------------%
-% 07/01/20, J.B.
-% 07/02/20, J.B., modifications for comparisons (e.g., error measure in gr
-% methods.
-% 07/07/20, J.B., Running GR solvers for longer times
-% 07/20/20, T.M., add random PLSS solver
-% 12/08/21, J.B., Test run of experiment and using plss_RW1
-% 01/11/22, J.B., Including randomized methods
-% 04/28/22, J.B., Including extended Kaczmark method
-% 05/03/22, J.B., Randomized PLSS Kaczmark method
+% 08/12/20, J.B., Including sequential QR method (SQR)
+% 05/15/21, J.B., Including scaled solver
+% 05/17/21, J.B., Modified weighted solver
+% 05/19/21, J.B., Including randomized solver in comparisons
+% 12/03/21, J.B., Including PLSS W=I in comparison
+% 12/06/21, J.B., Storing relative residuals and distance to solution
 % 05/07/22, J.B., Preparing for release
+% 06/24/22, J.B., Further preparations
 
 clc;
 clear;
-close all;
 
-addpath(genpath('../ALGS'));
+exName ='III';
 
-% Specify problem path
-myp = strsplit(pwd,'/');
-myp{end} = 'external';
-extPath = fullfile(myp{:});
+addpath('../ALGS');
+addpath('../AUXILIARY');
+addpath('../external/ssget');
+addpath('../external/craigSOL');
 
-libSVMpath = ['/',extPath,'/','LIBSVM']; % /libsvm/matlab
-RandLinLab = ['/',extPath,'/','RandomLinearLab'];
-addpath(genpath(libSVMpath));
-addpath(genpath(RandLinLab));
+index = ssget;
 
-figpath ='figs/';
+% Select rectangular matrices with column-sizes nl <= n <= nu
 
-probPath = [libSVMpath,'/data/'];
+nl = 1000;
+nu = 10000;
 
-problist = {
-    'a6a';...
-    'a7a';...
-    'a8a';...
-    'a9a';...
-    'aloi.scale';...
-    'protein';...
-    'covtype.libsvm.binary.scale';...
-    'SUSY'};
+condit =  (index.nrows < index.ncols) & ...
+          (index.ncols <= nu) & ...
+          (nl <= index.ncols);      
 
-nprobs = length(problist);
+% Linear indices
+ids  = find(condit);
+nids = length(ids);
 
-timesr = zeros(nprobs,1);
-timesp = zeros(nprobs,1);
+% Storing problem data
+nprob   = 42;
+names   = cell(nprob,1);
+iids    = zeros(nprob,1);
+nnzs    = zeros(nprob,1);
+ms      = zeros(nprob,1);
+ns      = zeros(nprob,1);
 
-% Randomized solvers options
-options =[];
-options.ep=1*10^(-4);
-options.max_time = 1;%1%5*60;  % 300s
+% Solver data
+solIdx = [30,24,28,34];
+nsol   = length(solIdx);
+exs    = zeros(nprob,nsol);
+nits   = zeros(nprob,nsol);
+res    = zeros(nprob,nsol);
+times  = zeros(nprob,nsol);
 
-nsol = 8;
+infsS0=cell(nprob,3);
 
-fprintf('********* Running EXPERIMENT III (Randomized) ******** \n');
-fprintf('*         PLSS                                         \n');
-fprintf('*         Number of Solvers: %i                        \n',nsol);
-fprintf('*         Number of Problems: %i                       \n',nprobs);
-fprintf('*         Conv.: norm(rk) <= %1.1e                     \n',options.ep);
-fprintf('*         Max time = %1.f sec.                         \n',options.max_time);
-fprintf('****************************************************** \n');
+epsBase = 1e-4; % 1e-2, 1e-4
+% Option(s) for PLSS
+opts.print = 0; % 1
+opts.tol = epsBase;
+
+% Flags for additional storage
+opts.storeSolRes=1;
+opts.storeRelRes=1;
+
+%Additioanal storage
+relRes  = zeros(nprob,nsol);
+solRes  = zeros(nprob,nsol);
+
+% Options(s) for 'external' solvers
+M1 = [];
+M2 = [];
+
+optsS.M1 = [];
+optsS.M2 = [];
+optsS.itRes = [];
+
+fprintf('********* Running EXPERIMENT III Underdet. ******** \n');
+fprintf('*         PLSS                                      \n');
+fprintf('*         Number of Solvers: %i                     \n',nsol);
+fprintf('*         Number of Problems: %i                    \n',nprob);
+fprintf('*         Sizes: n <= m, %i <= n <= %i              \n',nl,nu);
+fprintf('*         Times in sec.                             \n');
+fprintf('*************************************************** \n');
 fprintf('\n');
 
-
-%% Read LIBSVM problems.
-for i = 1:nprobs % 3:3%
-    
-    file    = problist{i};
-    
-    % Reading problem
-    tr = tic;
-    if strcmp(file,'SUSY')==1
-        SUSY_AB = load('./data/SUSY_AB');
-        AA = SUSY_AB.AA;
-        Ab = SUSY_AB.Ab;
-        m = SUSY_AB.m;
-        n = SUSY_AB.n;
-    else
-        [b,A]   = libsvmread([probPath,file]);
-        timesr(i) = toc(tr);
-        
-        % Forming problem
-        [m,n] = size(A);
-        In = eye(n);
-        tp = tic;
-        AA = (A'*A)+In;
-        Ab = A'*b;
-        timesp(i) = toc(tp);
-        
-    end
-        
-    clear Prob;
-    %close all;
-    Prob.A = AA;
-    Prob.b = Ab;
-    Prob.sol = Prob.A\Prob.b;
-    Prob.title = file;
-    nb = norm(Ab);
-    
-    %%----------
-    % Solvers from RandomLinearLab
-    %
-    % Gausspd
-    % CD
-    % BCD
-    % GaussBpd
-    %
-    %-----------
-    options.errorScale = nb^2;
-    options.errorSqrt = 1;
-    % Calling solvers
-    options.max_iterations =  10^6;%n;%10^6;  % maximum of 10^6 iterations
-    
-    % This forces all methods to use the same error measurement, 
-    % comment this, the methods will select their own pd matrices for measuring error
-    options.metric = (Prob.A'*Prob.A);% In; %Prob.A'*Prob.A;  
-    OUTPUTS ={};
-    [~, output_gausspd] = solve_system(Prob,@iter_Gausspd, @boot_Gausspd,options );
-    OUTPUTS = [ OUTPUTS ; output_gausspd]; %#ok<*AGROW>
-    %% Randomized Coordinate Descent for positive definite
-    [~, output_cd] = solve_system(Prob,@iter_CD, @boot_CD,options );
-    OUTPUTS = [ OUTPUTS ; output_cd];
-    %% Block Coordinate Descent for positive definite
-    [~, output_Bcd] = solve_system(Prob,@iter_BCD, @boot_BCD,options );
-    OUTPUTS = [ OUTPUTS ; output_Bcd];
-    %% %% BLOCK METHODS
-    %% Block Gaussian positive definite
-    [~, output_gausspd] = solve_system(Prob,@iter_GaussBpd, @boot_GaussBpd,options );
-    output_gausspd.name = '$\textnormal{Block Gauss}$';
-    OUTPUTS = [ OUTPUTS ; output_gausspd];
-    
-    %%----------
-    % Solvers from PLSS
-    %
-    % PLSS W 
-    % PLSS
-    % PLSS KZ
-    %
-    %-----------
-    %% PLSS W
-    opts.projRes = false;
-    opts.maxiter    = max(m,n);
-    opts.store      = 1;
-    opts.tol        = options.ep;
-    x0              = zeros(n,1);
-    opts.print = 0;
-    [~,~,outs] = plss_RW1(x0,Prob.A,Prob.b,opts);
-    le = length(outs.errs);
-    stp = 1;
-    if le > 1e3 && le > n
-        stp = 50;
-    elseif le > n
-        stp = 10;
-    end
-    output_plss.errors  = outs.errs';
-    output_plss.errors  = output_plss.errors([1:stp:le,le]);
-    output_plss.times   = outs.times';
-    output_plss.times   = output_plss.times([1:stp:le,le]);
-    output_plss.name    = 'PLSS W';
-    OUTPUTS = [ OUTPUTS ; output_plss];
-    
-    %% PLSS
-    opts.projRes = false;
-    opts.maxiter    = max(m,n);
-    opts.store      = 1;
-    opts.tol        = options.ep;
-    x0              = zeros(n,1);
-    opts.print = 0;
-    [~,~,outs] = plss_R(x0,Prob.A,Prob.b,opts);
-    
-    le = length(outs.errs);
-    stp = 1;
-    if le > 1e3 && le > n
-        stp = 50;
-    elseif le > n
-        stp = 10;
-    end
-    output_plss.errors  = outs.errs';
-    output_plss.errors  = output_plss.errors([1:stp:le,le]);
-    output_plss.times   = outs.times';
-    output_plss.times   = output_plss.times([1:stp:le,le]);
-    output_plss.name    = 'PLSS';
-    OUTPUTS = [ OUTPUTS ; output_plss];
-           
-    %% PLSS KZ
-    opts.projRes = false;
-    opts.maxiter    = min(m,n+50);
-    opts.store      = 1;
-    opts.tol        = options.ep;
-    x0              = zeros(n,1);
-    opts.print = 0;
-    
-    [~,~,outs] = plss_KZ_EX(x0,Prob.A,Prob.b,opts);
-    
-    le = length(outs.errs);
-    stp = 1;
-    if le > 1e3 && le > n
-        stp = 50;
-    elseif le > n
-        stp = 10;
-    end
-    output_plss.errors  = outs.errs';
-    output_plss.errors  = output_plss.errors([1:stp:le,le]);
-    output_plss.times   = outs.times';
-    output_plss.times   = output_plss.times([1:stp:le,le]);    
-    output_plss.name    = 'PLSS KZ';
-    OUTPUTS = [ OUTPUTS ; output_plss];
-    
-    figpn = [figpath,file,'.pdf'];
-    figure;
-    prettyPlot_solve_system_wrapper_figpath(OUTPUTS,Prob,figpn);
-    
+solnames = {' Rnd. Prj',' PLSS    ', ' PLSS W  ',' CRAIG    '};
+mess = 'id \t rows \t cols \t';
+for i = 1:nsol
+    if i==nsol; est = '\n'; else est = '   \t';  end;
+    % mess = [mess,'Sol.',num2str(i),est]; %#ok<AGROW>
+    mess = [mess,solnames{i},est]; %#ok<AGROW>
 end
+fprintf(mess);
 
+ts = tic;
+for i = 1:nprob
+
+    % Loading problem and dimensions
+    Prob= ssget(ids(i));
+    A   = Prob.A;
+
+    [m,n] = size(A);
+    ids(i)   = Prob.id;
+    names{i} = Prob.name;
+    nnzs(i) = nnz(A);
+    ms(i) = m;
+    ns(i) = n;
+
+    % Solution, tolerances and initialization
+    x0_ = ones(n,1);
+    x0_(1) = 10;
+    b = A*x0_;
+    
+    nb = max(norm(b),1);    
+    x0 = zeros(n,1);
+    resEps = epsBase/nb;
+        
+    MAXIT = n + 1500;       
+    opts.maxiter = MAXIT;
+    opts.tol = epsBase; % epsBase
+    
+    % Set r (number of columns in the random solver)
+    r = 10; % 10, 50
+    opts.r = r;
+    
+    optsS.tolRel  = resEps;
+    optsS.maxit = MAXIT;
+    optsS.optsP = opts;
+    nproj = 1;
+    nintsol = 1;
+    
+    % Parameters for Craig's method
+    optsS.atol   = 0; %1e-10; %opts.tol;
+    optsS.btol   = resEps; %opts.tol;
+    optsS.conlim = 1.0e+14;    
+    optsS.show   = 0;   
+    
+    % True solution (for later comparison)
+    optsS.x=x0_;
+%     %opts.storeResSoln=1;
+%     %opts.storeRelRes=1;
+% 
+%     % Adjust limited memory parameters
+%     memRat = 1/100;
+%     mem = 25;%min(floor(memRat*n),100);
+%     nRst = 300;%2*mem;
+% 
+%     optsS.optsP.rst = nRst;
+%     optsS.optsP.mem = mem;
+%     optsS.itRes = nRst;
+%     
+    optsS.storeSolRes=opts.storeSolRes;
+    optsS.storeRelRes=opts.storeRelRes;
+
+    for j = 1:nsol
+
+%         if solIdx(j) == 21
+%             %optsS.optsP.maxiter = ;
+%             optsS.optsP.rst = MAXIT;
+%             optsS.optsP.mem = MAXIT;
+%         end
+        
+        outs = runLSolver(A,b,x0,optsS,solIdx(j));
+        if outs.res < epsBase; exs(i,j) = 1; else exs(i,j) = 0; end % epsBase
+        nits(i,j)   = outs.niter;
+        res(i,j)    = outs.res;
+        times(i,j)  = outs.time;
+%         if solIdx(j) == 12 || solIdx(j) == 13
+%             infsS0{i,nintsol} = outs.info1;
+%             nintsol = nintsol + 1;
+%         end
+        
+        if isfield(opts,'storeRelRes')
+            if opts.storeRelRes==1;
+                relRes(i,j)=outs.relRes;
+            end
+            
+        end
+                
+        if isfield(opts,'storeSolRes')
+            if opts.storeSolRes==1
+                solRes(i,j)=outs.solRes;
+            end
+        end
+        
+    end
+
+    messb = '%i\t%i\t %i ';
+    messm = repmat('\t %.2e     ',1,(nsol));
+    mess = [messb,messm,'\n'];
+    fprintf(mess,i,m,n,times(i,1:nsol)./exs(i,1:nsol));
+
+end
+te = toc(ts);
+
+savepath = fullfile('./data');
+save([savepath,'/EXPERIMENT_',exName],'names','iids','nnzs','ms','ns',...
+    'exs','nits','res','times','solRes','relRes');
 

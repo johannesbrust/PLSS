@@ -3,7 +3,7 @@
 
 Matlab and Python implementations from
 
-"PLSS: Projected Linear Systems Solver with Randomization", J.J. Brust and M.A. Saunders (2022)
+"PLSS: A Projected Linear Systems Solver", J.J. Brust and M.A. Saunders (2022)
 
 Content:
   * MATLAB/

@@ -101,7 +101,7 @@ You can cite this work as (bibtex)
 ```
 @TechReport{plss22,
   author      = {Johannes J. Brust and Michael A. Saunders},
-  title       = {PLSS: Projected Linear Systems Solver with Randomization},
+  title       = {PLSS: A Projected Linear Systems Solver},
   institution = {Mathematics Department, University of California, San Diego, CA},
   type        = {Technical Report},
   year        = {2022},

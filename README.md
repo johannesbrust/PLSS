@@ -14,7 +14,7 @@ Content:
     * external/
   * PYTHON/  
 
-Notes: The Matlab codes include all external libraries and methods in order reproduce the article experiments.
+Notes: The Matlab codes include all external libraries and methods in order to reproduce the article experiments.
 That is, functions from `[1]`,`[2]` and `[3]` are used either to generate problems or to compare. The Python
 implementations use numpy https://numpy.org/
     

@@ -105,7 +105,7 @@ You can cite this work as (bibtex)
   institution = {Mathematics Department, University of California, San Diego, CA},
   type        = {Technical Report},
   year        = {2022},
-  url         = {TBD}
+  url         = {https://arxiv.org/abs/2207.07615}
 }
 ```
 

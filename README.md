@@ -4,6 +4,7 @@
 Matlab and Python implementations from
 
 "PLSS: A Projected Linear Systems Solver", J.J. Brust and M.A. Saunders (2022)
+([Report:](https://arxiv.org/abs/2207.07615 "Technical Report"))
 
 Content:
   * MATLAB/

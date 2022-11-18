@@ -45,6 +45,7 @@ function [ xk, nck, outs ] = plss_R( x, A, b, opts )
 % 04/02/20, J.B., Initial implementation
 % 12/07/20, J.B., Recursive formula
 % 05/08/22, J.B., Preparation for release
+% 11/08/22, J.B., Safeguarding residual norm on exit
 
 % Initializations
 if isfield(opts,'tol') 
@@ -116,6 +117,18 @@ if nck <= tol
             
     ex      = 1;
     tend    = toc(tstart);
+        
+    outs.ex     = ex;
+    outs.ctime  = tend;
+    outs.niter  = k;
+    outs.numA   = numA;
+    
+    if store == true        
+        outs.errs   = errs;
+        outs.times  = times;
+    end
+    
+    return;
     
 end
 
@@ -211,7 +224,7 @@ if nck < tol
     ex = 1;
 end
 
-if nckmin < nck
+if nckmin < nck || isnan(nck)
    
     nck = nckmin;
     xk = xkmin;

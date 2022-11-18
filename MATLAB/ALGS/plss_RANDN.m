@@ -116,6 +116,18 @@ if nck <= tol
             
     ex      = 1;
     tend    = toc(tstart);
+        
+    outs.ex     = ex;
+    outs.ctime  = tend;
+    outs.niter  = k;
+    outs.numA   = numA;
+    
+    if store == true        
+        outs.errs   = errs;
+        outs.times  = times;
+    end
+    
+    return;
     
 end
 

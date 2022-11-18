@@ -216,6 +216,18 @@ if nck <= tol
     ex      = 1;
     tend    = toc(tstart);
     
+    outs.ex     = ex;
+    outs.ctime  = tend;
+    outs.niter  = k;
+    outs.numA   = numA;
+    
+    if store == true        
+        outs.errs   = errs;
+        outs.times  = times;
+    end
+    
+    return;
+    
 end
 
 deltaki     = 1/(yk'*yk);
@@ -396,7 +408,7 @@ if nck < tol
     ex = 1;
 end
 
-if nckmin < nck
+if nckmin < nck || isnan(nck)
    
     nck = nckmin;
     xk = xkmin;

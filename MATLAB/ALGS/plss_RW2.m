@@ -52,6 +52,7 @@ function [ xk, nck, outs ] = plss_RW2( x, A, b, opts )
 % 05/15/21, J.B., Modified weighting matrix
 % 05/17/21, J.B., Implementation of implicit ck
 % 05/08/22, J.B., Preparation for release
+% 11/08/22, J.B., Return if solution is the starting vector
 
 % Initializations
 if isfield(opts,'tol') 
@@ -96,7 +97,7 @@ Wh = ones(n,1);
 Whi = ones(n,1);
 
 if useW == 1
-    if m <= n
+    if m ==n
         Wh(1:n) = sqrt(sum(A.*A)+1); % 0.5
         Wh(1:n) = min(Wh(1:n),1e5);
         Whi(1:n) = 1./Wh(1:n);
@@ -139,6 +140,18 @@ if nck <= tol
             
     ex      = 1;
     tend    = toc(tstart);
+    
+    outs.ex     = ex;
+    outs.ctime  = tend;
+    outs.niter  = k;
+    outs.numA   = numA;
+    
+    if store == true        
+        outs.errs   = errs;
+        outs.times  = times;
+    end
+    
+    return;
     
 end
 
@@ -240,7 +253,7 @@ if nck < tol
     ex = 1;
 end
 
-if nckmin < nck
+if nckmin < nck || isnan(nck)
    
     nck = nckmin;
     xk = xkmin;

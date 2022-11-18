@@ -3,7 +3,8 @@
 
 Matlab and Python implementations from
 
-"PLSS: Projected Linear Systems Solver with Randomization", J.J. Brust and M.A. Saunders (2022)
+"PLSS: A Projected Linear Systems Solver", J.J. Brust and M.A. Saunders (2022),
+[[Article](https://arxiv.org/abs/2207.07615 "Technical Report")]
 
 Content:
   * MATLAB/
@@ -14,7 +15,7 @@ Content:
     * external/
   * PYTHON/  
 
-Notes: The Matlab codes include all external libraries and methods in order reproduce the article experiments.
+Notes: The Matlab codes include all external libraries and methods in order to reproduce the article experiments.
 That is, functions from `[1]`,`[2]` and `[3]` are used either to generate problems or to compare. The Python
 implementations use numpy https://numpy.org/
     
@@ -101,11 +102,11 @@ You can cite this work as (bibtex)
 ```
 @TechReport{plss22,
   author      = {Johannes J. Brust and Michael A. Saunders},
-  title       = {PLSS: Projected Linear Systems Solver with Randomization},
+  title       = {PLSS: A Projected Linear Systems Solver},
   institution = {Mathematics Department, University of California, San Diego, CA},
   type        = {Technical Report},
   year        = {2022},
-  url         = {TBD}
+  url         = {https://arxiv.org/abs/2207.07615}
 }
 ```
 

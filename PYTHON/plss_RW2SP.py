@@ -186,7 +186,7 @@ def plss_RW2SP(x, A, b,
             ckm = np.sum(measure*ck,1);
             nck = np.sqrt(np.sum((ckm*ckm)));
         else:
-            nck = np.linalg.norm(ck*ck); 
+            nck = np.linalg.norm(ck); 
             
         # Safeguard (to set pk=0 when a solution is found)
         p2      = np.sum((pk*pk));

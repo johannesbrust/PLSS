@@ -100,13 +100,15 @@ Iter 	 norm(Res) 	 norm(pk)
 You can cite this work as (bibtex)
 
 ```
-@TechReport{plss22,
-  author      = {Johannes J. Brust and Michael A. Saunders},
-  title       = {PLSS: A Projected Linear Systems Solver},
-  institution = {Mathematics Department, University of California, San Diego, CA},
-  type        = {Technical Report},
-  year        = {2022},
-  url         = {https://arxiv.org/abs/2207.07615}
+@article{brustS23,
+  title={PLSS: A Projected Linear Systems Solver},
+  author={Brust, Johannes J and Saunders, Michael A},
+  journal={SIAM Journal on Scientific Computing},
+  volume={45},
+  number={2},
+  pages={A1012--A1037},
+  year={2023},
+  publisher={SIAM}
 }
 ```
 
